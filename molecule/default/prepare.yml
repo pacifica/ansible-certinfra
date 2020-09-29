@@ -1,0 +1,14 @@
+---
+- name: Install Python 3
+  hosts: all
+  tasks:
+    - name: Set OS distribution dependent variables
+      include_vars: "python_{{ ansible_distribution }}_{{ ansible_distribution_major_version }}.yml"
+    - name: Apt Get Update
+      apt:
+        update_cache: yes
+      when:
+        - ansible_distribution == 'Ubuntu'
+    - name: Install Python 3
+      package:
+        name: "{{ python3_packages }}"

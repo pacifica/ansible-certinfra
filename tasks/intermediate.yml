@@ -1,0 +1,68 @@
+---
+- name: Generate an OpenSSL private key Intermediate
+  community.crypto.openssl_privatekey:
+    path: "{{ intermediate_key_path }}"
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: "{{ intermediate_csr_path }}"
+    privatekey_path: "{{ intermediate_key_path }}"
+    country_name: "{{ country_name }}"
+    state_or_province_name: "{{ state_or_province_name }}"
+    locality_name: "{{ locality_name }}"
+    organization_name: "{{ organization_name }}"
+    organizational_unit_name: "{{ organizational_unit_name }}"
+    email_address: "{{ email_address }}"
+    basic_constraints_critical: "{{ intermediate_basic_constraints_critical }}"
+    basic_constraints: "{{ intermediate_basic_constraints }}"
+    key_usage_critical: "{{ intermediate_key_usage_critical }}"
+    key_usage: "{{ intermediate_key_usage }}"
+    common_name: "{{ intermediate_common_name }}"
+- name: Check for the intermediate cert file
+  stat:
+    path: "{{ intermediate_cert_path }}"
+  register: intermediate_file_result
+- name: Certificate file Exists
+  block:
+    - name: Test whether that certificate is valid in one week
+      community.crypto.x509_certificate_info:
+        path: "{{ intermediate_cert_path }}"
+        valid_at:
+          one_week: "+1w"
+      register: result
+    - name: Remove the cert if it's not valid in one week
+      file:
+        path: "{{ intermediate_cert_path }}"
+        state: absent
+      when:
+        - not result.valid_at.one_week
+  when:
+    - intermediate_file_result.stat.exists
+- name: Check for the intermediate cert file (again...)
+  stat:
+    path: "{{ intermediate_cert_path }}"
+  register: intermediate_file_result
+- name: Generate an OpenSSL Certificate for Intermediate
+  community.crypto.x509_certificate:
+    path: "{{ intermediate_cert_path }}"
+    privatekey_path: "{{ intermediate_key_path }}"
+    csr_path: "{{ intermediate_csr_path }}"
+    ownca_not_after: "{{ intermediate_ownca_not_after }}"
+    ownca_privatekey_path: "{{ root_ca_key_path }}"
+    ownca_path: "{{ root_cert_path }}"
+    provider: ownca
+  when:
+    - not intermediate_file_result.stat.exists
+- name: Slurp the Root CA Cert
+  slurp:
+    src: "{{ root_cert_path }}"
+  register: root_cert_slurp
+- name: Slurp the Intermediate Cert
+  slurp:
+    src: "{{ intermediate_cert_path }}"
+  register: intermediate_cert_slurp
+- name: Create Chain File
+  copy:
+    content: |
+      {{ intermediate_cert_slurp.content | b64decode }}{{ root_cert_slurp.content | b64decode }}
+    dest: "{{ chain_cert_path }}"
+    mode: '0644'

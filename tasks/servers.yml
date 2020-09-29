@@ -1,0 +1,64 @@
+---
+- name: Generate an OpenSSL private keys for Servers
+  community.crypto.openssl_privatekey:
+    path: "{{ item.key_path | default('/'.join([private_key_dir, item.name])+'.pem') }}"
+  loop: "{{ servers }}"
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: "{{ item.csr_path | default('/'.join([private_key_dir, item.name])+'.csr') }}"
+    privatekey_path: "{{ item.key_path | default('/'.join([private_key_dir, item.name])+'.pem') }}"
+    country_name: "{{ country_name }}"
+    state_or_province_name: "{{ state_or_province_name }}"
+    locality_name: "{{ locality_name }}"
+    organization_name: "{{ organization_name }}"
+    organizational_unit_name: "{{ organizational_unit_name }}"
+    email_address: "{{ email_address }}"
+    basic_constraints_critical: "{{ item.basic_constraints_critical | default(default_server_basic_constraints_critical) }}"
+    basic_constraints: "{{ item.basic_constraints | default(default_server_basic_constraints) }}"
+    key_usage_critical: "{{ item.key_usage_critical | default(default_server_key_usage_critical) }}"
+    key_usage: "{{ item.key_usage | default(default_server_key_usage) }}"
+    common_name: "{{ item.name }}"
+    subject_alt_name_critical: "{{ item.subject_alt_name_critical | default('yes') }}"
+    subject_alt_name: "{{ item.subject_alt_name | default([]) }}"
+  loop: "{{ servers }}"
+- name: Check for the server cert file
+  stat:
+    path: "{{ item.cert_path | default('/'.join([cert_dir, item.name])+'.crt') }}"
+  register: server_cert_file_result
+  loop: "{{ servers }}"
+- name: Test whether that certificate is valid in one week
+  community.crypto.x509_certificate_info:
+    path: "{{ item.stat.path }}"
+    valid_at:
+      one_week: "+1w"
+  register: cert_valid_result
+  when: item.stat.exists
+  loop: "{{ server_cert_file_result.results }}"
+- name: Remove the cert if it's not valid in one week
+  file:
+    path: "{{ item.1.path }}"
+    state: absent
+  when:
+    - item.1.stat.exists and (item.0 is defined and not item.0.valid_at.one_week)
+  with_nested:
+    - "{{ cert_valid_result.results }}"
+    - "{{ server_cert_file_result.results }}"
+- name: Check for the intermediate cert file (again...)
+  stat:
+    path: "{{ item.cert_path | default('/'.join([cert_dir, item.name])+'.crt') }}"
+  register: server_cert_file_result
+  loop: "{{ servers }}"
+- name: Generate an OpenSSL Certificate for Intermediate
+  community.crypto.x509_certificate:
+    path: "{{ item.0.cert_path | default('/'.join([cert_dir, item.0.name])+'.crt') }}"
+    privatekey_path: "{{ item.0.key_path | default(intermediate_key_path) }}"
+    csr_path: "{{ item.0.csr_path | default('/'.join([private_key_dir, item.0.name])+'.csr') }}"
+    ownca_not_after: "{{ item.0.ownca_not_after | default(default_server_ownca_not_after) }}"
+    ownca_privatekey_path: "{{ intermediate_key_path }}"
+    ownca_path: "{{ intermediate_cert_path }}"
+    provider: ownca
+  when:
+    - not item.1.stat.exists
+  with_nested:
+    - "{{ servers }}"
+    - "{{ server_cert_file_result.results }}"

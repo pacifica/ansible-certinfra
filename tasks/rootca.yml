@@ -1,0 +1,52 @@
+---
+- name: Generate an OpenSSL private key ROOT
+  community.crypto.openssl_privatekey:
+    path: "{{ root_ca_key_path }}"
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: "{{ root_csr_path }}"
+    privatekey_path: "{{ root_ca_key_path }}"
+    country_name: "{{ country_name }}"
+    state_or_province_name: "{{ state_or_province_name }}"
+    locality_name: "{{ locality_name }}"
+    organization_name: "{{ organization_name }}"
+    organizational_unit_name: "{{ organizational_unit_name }}"
+    email_address: "{{ email_address }}"
+    basic_constraints_critical: "{{ root_ca_basic_constraints_critical }}"
+    basic_constraints: "{{ root_ca_basic_constraints }}"
+    key_usage_critical: "{{ root_ca_key_usage_critical }}"
+    key_usage: "{{ root_ca_key_usage }}"
+    common_name: "{{ root_ca_common_name }}"
+- name: Check for the root ca cert file
+  stat:
+    path: "{{ root_cert_path }}"
+  register: root_ca_file_result
+- name: Certificate file Exists
+  block:
+    - name: Test whether that certificate is valid in one week
+      community.crypto.x509_certificate_info:
+        path: "{{ root_cert_path }}"
+        valid_at:
+          one_week: "+1w"
+      register: result
+    - name: Remove the cert if it's not valid in one week
+      file:
+        path: "{{ root_cert_path }}"
+        state: absent
+      when:
+        - not result.valid_at.one_week
+  when:
+    - root_ca_file_result.stat.exists
+- name: Check for the root ca cert file (again...)
+  stat:
+    path: "{{ root_cert_path }}"
+  register: root_ca_file_result
+- name: Generate an OpenSSL Certificate for ROOT
+  community.crypto.x509_certificate:
+    path: "{{ root_cert_path }}"
+    privatekey_path: "{{ root_ca_key_path }}"
+    csr_path: "{{ root_csr_path }}"
+    selfsigned_not_after: "{{ root_ca_selfsigned_not_after }}"
+    provider: selfsigned
+  when:
+    - not root_ca_file_result.stat.exists

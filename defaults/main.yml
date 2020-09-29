@@ -1,0 +1,66 @@
+---
+openssl_packages: openssl
+
+# Users should change these
+country_name: US
+state_or_province_name: Washington
+locality_name: Richland
+organization_name: Pacifica Software
+organizational_unit_name: Pacifica Certificate
+email_address: rootca@pacifica.io
+root_ca_common_name: Pacifica Software ROOT CA
+intermediate_common_name: Pacifica Software Intermediate ROOT CA
+
+# Main list of servers and clients to create
+servers:
+  - name: localhost.localdomain
+    subject_alt_name: ['IP:127.0.0.1', 'DNS:localhost.localdomain']
+clients:
+  - name: root
+
+root_ca_selfsigned_not_after: '+7300d'
+root_ca_basic_constraints_critical: yes
+root_ca_basic_constraints: ['CA:TRUE']
+root_ca_key_usage_critical: yes
+root_ca_key_usage:
+  - digitalSignature
+  - cRLSign
+  - keyCertSign
+
+intermediate_ownca_not_after: '+3650d'
+intermediate_basic_constraints_critical: yes
+intermediate_basic_constraints: ['CA:TRUE', 'pathlen:0']
+intermediate_key_usage_critical: yes
+intermediate_key_usage:
+  - digitalSignature
+  - cRLSign
+  - keyCertSign
+
+root_ca_key_path: "{{ private_key_dir }}/pacifica_root_ca.io.pem"
+root_csr_path: "{{ private_key_dir }}/pacifica_root_ca.io.csr"
+root_cert_path: "{{ cert_dir }}/pacifica_root_ca.io.crt"
+
+intermediate_key_path: "{{ private_key_dir }}/pacifica_intermediate.io.pem"
+intermediate_csr_path: "{{ private_key_dir }}/pacifica_intermediate.io.csr"
+intermediate_cert_path: "{{ cert_dir }}/pacifica_intermediate.io.crt"
+chain_cert_path: "{{ cert_dir }}/pacifica_chain.io.crt"
+
+default_server_basic_constraints_critical: yes
+default_server_basic_constraints: ['CA:FALSE']
+default_server_key_usage_critical: yes
+default_server_key_usage:
+  - digitalSignature
+  - keyEncipherment
+default_server_ownca_not_after: '+365d'
+default_client_basic_constraints_critical: yes
+default_client_basic_constraints: ['CA:FALSE']
+default_client_key_usage_critical: yes
+default_client_key_usage:
+  - nonRepudiation
+  - digitalSignature
+  - keyEncipherment
+default_client_extended_key_usage_critical: yes
+default_client_extended_key_usage:
+  - clientAuth
+  - emailProtection
+default_client_ownca_not_after: '+365d'

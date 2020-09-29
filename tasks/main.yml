@@ -1,0 +1,7 @@
+---
+- include_tasks: certinfra_vars.yml
+- include_tasks: packages.yml
+- include_tasks: rootca.yml
+- include_tasks: intermediate.yml
+- include_tasks: servers.yml
+- include_tasks: clients.yml

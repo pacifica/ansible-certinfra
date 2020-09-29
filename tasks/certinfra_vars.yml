@@ -1,0 +1,4 @@
+---
+- name: Set OS distribution dependent variables
+  include_vars: "certinfra_{{ ansible_facts['distribution'] }}.yml"
+  ignore_errors: yes

@@ -1,0 +1,4 @@
+---
+python3_packages:
+  - python3-minimal
+  - python-cryptography

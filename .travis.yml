@@ -1,0 +1,15 @@
+---
+dist: bionic
+sudo: required
+group: edge
+services: docker
+language: python
+python: 3.8
+env:
+  - SCENERIO=default
+install: pip install ansible molecule docker-py pre-commit pylint pep257 yamllint ansible-lint
+script:
+  - pushd .. && ln -s ansible-certinfra pacifica.ansible_certinfra && popd
+  - travis_wait 60 molecule test -s $SCENERIO
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/

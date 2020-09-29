@@ -1,0 +1,20 @@
+---
+# This is an example playbook to execute Ansible tests.
+
+- name: Verify
+  hosts: all
+  tasks:
+  - name: Include distro vars from role we are testing
+    include_vars: "{{ playbook_dir }}/../../vars/certinfra_{{ ansible_facts['distribution'] }}.yml"
+  - name: Include main vars from role we are testing
+    include_vars: "{{ playbook_dir }}/../../defaults/main.yml"
+  - name: Verify SSL Intermediate Certs
+    command: "openssl verify -CAfile {{ root_cert_path }} {{ intermediate_cert_path }}"
+    changed_when: false
+  - name: Verify SSL Certs
+    command: "openssl verify -CAfile {{ chain_cert_path }} {{ item }}"
+    loop:
+      - "{{ intermediate_cert_path }}"
+      - "{{ cert_dir }}/localhost.localdomain.crt"
+      - "{{ cert_dir }}/root.crt"
+    changed_when: false
