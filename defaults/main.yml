@@ -14,7 +14,10 @@ intermediate_common_name: Pacifica Software Intermediate ROOT CA
 # Main list of servers and clients to create
 servers:
   - name: localhost.localdomain
-    subject_alt_name: ['IP:127.0.0.1', 'DNS:localhost.localdomain']
+    subject_alt_name:
+      - 'IP:127.0.0.1'
+      - 'DNS:localhost.localdomain'
+      - 'DNS:localhost'
 clients:
   - name: root
 
