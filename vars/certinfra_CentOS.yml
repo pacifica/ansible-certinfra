@@ -1,2 +1,4 @@
 private_key_dir: /etc/pki/tls/private
 cert_dir: /etc/pki/tls/certs
+trust_chain_dir: /etc/pki/ca-trust/source/anchors
+update_trusted_ca_command: update-ca-trust extract

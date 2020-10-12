@@ -29,6 +29,7 @@ root_ca_key_usage:
   - digitalSignature
   - cRLSign
   - keyCertSign
+trust_root_ca: yes
 
 intermediate_ownca_not_after: '+3650d'
 intermediate_basic_constraints_critical: yes
