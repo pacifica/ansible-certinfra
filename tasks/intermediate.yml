@@ -70,7 +70,7 @@
   copy:
     content: |
       {{ intermediate_cert_slurp.content | b64decode }}{{ root_cert_slurp.content | b64decode }}
-    dest: "{{ trust_chain_dir }}{{ chain_cert_path | basename }}"
+    dest: "{{ trust_chain_dir }}/{{ chain_cert_path | basename }}"
     mode: '0644'
   when: trust_root_ca
   notify:
