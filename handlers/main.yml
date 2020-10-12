@@ -1,0 +1,3 @@
+---
+- name: Update Trusted CA Certs
+  command: "{{ update_trusted_ca_command }}"
