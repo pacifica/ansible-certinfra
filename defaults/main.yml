@@ -1,4 +1,5 @@
 ---
+install_packages: true
 openssl_packages: openssl
 
 # Users should change these
